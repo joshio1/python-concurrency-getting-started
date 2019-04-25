@@ -39,7 +39,7 @@ class ThumbnailMakerService(object):
 
         start = time.perf_counter()
         threads = []
-        for url in img_url_list:
+        for url in img_url_list * 10:
             t = threading.Thread(target = self.download_image, args=(url,))
             t.start()
             threads.append(t)
