@@ -18,18 +18,22 @@ class ThumbnailMakerService(object):
         self.input_dir = self.home_dir + os.path.sep + 'incoming'
         self.output_dir = self.home_dir + os.path.sep + 'outgoing'
         self.downloaded_bytes = 0
-        self.dl_lock = threading.Lock()
+        self.max_concurrent_downloads = 5
+        # Semaphore is an enhanced version of lock which allows multiple threads to acquire lock at once.
+        # Here, simple example is if Dropbox had a limit on the number of threads which can download the image, we could use a semaphore.
+        # WE have assumed that dropbox has that limit and implemented the semaphore version.
+        self.dl_lock = threading.Semaphore(self.max_concurrent_downloads) 
 
     def download_image(self, url):
         # download each image and save to the input dir 
-        logging.info("downloading image at URL " + url)
-        img_filename = urlparse(url).path.split('/')[-1]
-        dest_path = self.input_dir + os.path.sep + img_filename
-        urlretrieve(url, dest_path)
-        img_size = os.path.getsize(dest_path)
         with self.dl_lock:
+            logging.info("downloading image at URL " + url)
+            img_filename = urlparse(url).path.split('/')[-1]
+            dest_path = self.input_dir + os.path.sep + img_filename
+            urlretrieve(url, dest_path)
+            img_size = os.path.getsize(dest_path)
             self.downloaded_bytes += img_size
-        logging.info("image [{} bytes] saved to {}".format(img_size, dest_path))
+            logging.info("image [{} bytes] saved to {}".format(img_size, dest_path))
 
     def download_images(self, img_url_list):
         # validate inputs
@@ -41,7 +45,7 @@ class ThumbnailMakerService(object):
 
         start = time.perf_counter()
         threads = []
-        for url in img_url_list * 10:
+        for url in img_url_list:
             t = threading.Thread(target = self.download_image, args=(url,))
             t.start()
             threads.append(t)
