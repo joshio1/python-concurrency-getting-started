@@ -21,6 +21,7 @@ class ThumbnailMakerService(object):
         #Instead of having shared global variable between threads which lead to race conditions, let's have a shared queue and use this 
         # for message passing between the threads.
         self.img_queue = Queue()
+        self.dl_queue = Queue()
 
     def download_images(self, img_url_list):
         # validate inputs
@@ -73,10 +74,10 @@ class ThumbnailMakerService(object):
                     img.save(self.output_dir + os.path.sep + new_filename)
 
                 os.remove(self.input_dir + os.path.sep + filename)
-                self.img_queue.task_done()
+                # self.img_queue.task_done()
                 logging.info("resizing image {} completed".format(filename))
             else:
-                self.img_queue.task_done()
+                # self.img_queue.task_done()
                 break
         end = time.perf_counter()
 
